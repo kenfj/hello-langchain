@@ -1,0 +1,38 @@
+[project]
+name = "hello-langchain"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi[standard]>=0.136.0",
+    "grandalf>=0.8",
+    "langchain-ollama>=1.1.0",
+    "langgraph>=1.1.9",
+    "langserve[all]>=0.3.3",
+]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.408",
+    "ruff>=0.15.11",
+]
+
+[tool.pyright]
+typeCheckingMode = "standard"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.format]
+preview = true
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D",        # Ignore docstring related rules
+    "COM812",   # Ignore trailing comma in single-element tuples
+    "RUF001",   # Ignore ambiguous unicode characters (for Japanese text)
+    "TC",       # type checking imports
+    "T201",     # using print
+]

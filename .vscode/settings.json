@@ -1,0 +1,22 @@
+{
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit",
+            "source.organizeImports": "explicit"
+        }
+    },
+    "cSpell.words": [
+        "checkpointer",
+        "fastapi",
+        "grandalf",
+        "langchain",
+        "langgraph",
+        "langserve",
+        "ollama",
+        "pycache",
+        "pytest",
+        "venv"
+    ]
+}
