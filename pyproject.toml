@@ -10,6 +10,8 @@ dependencies = [
     "langchain-ollama>=1.1.0",
     "langgraph>=1.1.9",
     "langserve[all]>=0.3.3",
+    "pydantic-ai>=1.86.1",
+    "pydantic-graph>=1.86.1",
 ]
 
 [dependency-groups]
