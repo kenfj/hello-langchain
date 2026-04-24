@@ -21,6 +21,7 @@ tools = [validate_user]
 llm = ChatOllama(model="gemma4:latest", temperature=0)
 llm_with_tools = llm.bind_tools(tools)
 
+# gemma4 は tool 結果を受けても自発的に要約しないため、明示的に指示
 SYSTEM_MESSAGE = (
     "system",
     (
