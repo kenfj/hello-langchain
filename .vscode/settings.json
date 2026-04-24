@@ -16,7 +16,9 @@
         "langserve",
         "ollama",
         "pycache",
+        "Pydantic",
         "pytest",
+        "qwen",
         "venv"
     ]
 }
