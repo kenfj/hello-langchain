@@ -24,6 +24,8 @@ LangServe（add_routes で API 自動生成 ※メンテナンスモード）
 
 ## Steps
 
+### Basic
+
 | Step    | ファイル       | 内容                               | ライブラリ |
 | ------- | -------------- | ---------------------------------- | ---------- |
 | 1       | chat_step1.py  | LLM 直接呼び出し                   | LangChain  |
@@ -34,7 +36,24 @@ LangServe（add_routes で API 自動生成 ※メンテナンスモード）
 | 6       | chat_step6.py  | LangGraph Agent（Tool 実行ループ） | LangGraph  |
 | API     | main.py        | LangServe で API 公開（履歴付き）  | LangServe  |
 
+### Advanced (LangChain/PydanticAI)
+
+| Step    | ファイル       | 内容                        | ポイント |
+| ------- | -------------- | ------------------------- | ---------- |
+| 7       | chat_step7.py  | 翻訳→校正（多段パイプライン） | 複数ノード、カスタム State  |
+| 8       | chat_step8.py  | 分類→回答（条件分岐）        | ルーティング、分類結果に応じた処理  |
+| 9       | chat_step9.py  | 検索→要約（RAG）            | 外部データソース連携  |
+| 10      | chat_step10.py | エラーハンドリング           | リトライ・フォールバック  |
+| 11      | chat_step11.py | Human-in-the-loop         | 中断・再開  |
+
 各 Step には `chat_stepN_pydantic.py`（Pydantic AI 版）も用意している。
+
+> **Note:** Advanced の各ステップはグラフ構築パターンの学習を目的としたサンプルであり、multi-agent を推奨するものではない。
+>
+> - 同一モデルで多段に分業させるとコンテキストが断片化し、単一プロンプトより結果が悪化する場合がある
+> - 現在のモデルは system prompt でペルソナを設定しなくても十分な能力があり、分けるだけでは賢くならない
+> - Multi-agent が常に優れているわけではなく、有効なのはコンテキスト長の制約やツール権限の分離など構造上分けざるを得ないケースに限られる
+> - 1回のプロンプトで済むならそれが最善。グラフ化は管理の複雑さとトレードオフ
 
 ### Step 3 vs 4: 履歴管理の対比
 
@@ -94,9 +113,24 @@ Ollama で使う場合:
 
 pydantic-graph は LangGraph に相当するグラフ実行エンジン。公式ドキュメントでは "Don't use a nail gun unless you need a nail gun" と述べており、単純な用途なら Agent だけで十分。Step 4 では LangGraph との比較のために敢えて使用している。
 
+### Human-in-the-loop の違い
+
+| 観点 | LangGraph | pydantic-graph |
+|---|---|---|
+| 中断/再開 | `interrupt()` + `Command(resume=...)` | フレームワークレベルの機構なし |
+| 状態の永続化 | checkpointer が実行途中の状態を保持 | 自前で state を DB に保存する必要あり |
+| アプリのプロセスをまたぐ再開 | 可能（同じ実行を再開） | 新しい実行として再開する形になる |
+
+アプリのプロセスをまたぐ中断/再開（承認フロー等）は両方とも実現可能だが、LangGraph は checkpointer として組み込みで提供している。pydantic-graph では state の永続化/復元を自前で実装する必要がある。
+
 ## Quick Start
 
 ```bash
+# モデルの準備
+ollama pull gemma4:latest
+ollama pull qwen3.5:latest
+ollama pull nomic-embed-text  # エンベディングモデル (Step 9)
+
 # Pydantic AI 用に事前に設定
 export OLLAMA_BASE_URL='http://localhost:11434/v1'
 
