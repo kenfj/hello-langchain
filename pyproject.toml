@@ -18,6 +18,8 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pyright>=1.1.408",
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.3.0",
     "ruff>=0.15.11",
 ]
 
@@ -38,4 +40,5 @@ ignore = [
     "RUF001",   # Ignore ambiguous unicode characters (for Japanese text)
     "TC",       # type checking imports
     "T201",     # using print
+    "S101",     # assert in tests
 ]

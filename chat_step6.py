@@ -37,6 +37,8 @@ def chat(state: MessagesState) -> MessagesState:
     return {"messages": [ai_msg]}
 
 
+# 実務では create_react_agent(llm, tools) で以下のグラフ構築を1行で済ませられる。
+# ここでは仕組みを理解するために手書きしている。
 graph = StateGraph(MessagesState)
 
 graph.add_node("chat", chat)
