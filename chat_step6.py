@@ -1,7 +1,7 @@
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langchain_ollama import ChatOllama
-from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
@@ -50,34 +50,37 @@ graph.add_edge(START, "chat")
 graph.add_conditional_edges("chat", tools_condition)
 graph.add_edge("tools", "chat")
 
-app = graph.compile(checkpointer=MemorySaver())
+DB_PATH = "step6_memory.db"
 
 
 def run_step6_langgraph_agent() -> None:
-    config: RunnableConfig = {"configurable": {"thread_id": "user123"}}
+    with SqliteSaver.from_conn_string(DB_PATH) as checkpointer:
+        app = graph.compile(checkpointer=checkpointer)
+        app.get_graph().print_ascii()
 
-    initial_state = {
-        "messages": [
-            (
-                "human",
-                "Could you validate user 123? They previously lived at "
-                "123 Fake St in Boston MA and 234 Pretend Boulevard in "
-                "Houston TX.",
-            )
-        ]
-    }
+        config: RunnableConfig = {"configurable": {"thread_id": "user123"}}
 
-    result = app.invoke(initial_state, config)  # pyright: ignore[reportArgumentType]
+        initial_state = {
+            "messages": [
+                (
+                    "human",
+                    "Could you validate user 123? They previously lived at "
+                    "123 Fake St in Boston MA and 234 Pretend Boulevard in "
+                    "Houston TX.",
+                )
+            ]
+        }
 
-    # AIMessage has either content (text) or tool_calls (tool invocation)
-    # ToolMessage has content with tool execution result (e.g. "true")
-    for msg in result["messages"]:
-        print(f"{type(msg).__name__}: {msg.content or msg.tool_calls}")
+        result = app.invoke(initial_state, config)  # pyright: ignore[reportArgumentType]
+
+        # AIMessage has either content (text) or tool_calls (tool invocation)
+        # ToolMessage has content with tool execution result (e.g. "true")
+        for msg in result["messages"]:
+            print(f"{type(msg).__name__}: {msg.content or msg.tool_calls}")
 
 
 def main() -> None:
     print("Step 6: LangGraph Agent (Tool execution loop)")
-    app.get_graph().print_ascii()
 
     run_step6_langgraph_agent()
 

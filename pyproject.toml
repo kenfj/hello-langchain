@@ -9,6 +9,7 @@ dependencies = [
     "grandalf>=0.8",
     "langchain-ollama>=1.1.0",
     "langgraph>=1.1.9",
+    "langgraph-checkpoint-sqlite>=3.0.3",
     "langserve[all]>=0.3.3",
     "numpy>=2.4.4",
     "pydantic-ai>=1.86.1",

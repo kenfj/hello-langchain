@@ -1,6 +1,6 @@
 from langchain_core.runnables import RunnableConfig
 from langchain_ollama import ChatOllama
-from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 
 llm = ChatOllama(model="gemma4:latest", temperature=0)
@@ -20,25 +20,26 @@ graph.add_node("chat", chat)
 graph.add_edge(START, "chat")
 graph.add_edge("chat", END)
 
-app = graph.compile(checkpointer=MemorySaver())
+DB_PATH = "step4_memory.db"
 
 
-def run_step4_langgraph_with_memory() -> None:
-    config: RunnableConfig = {"configurable": {"thread_id": "user123"}}
+def run_step4_langgraph_with_sqlite() -> None:
+    with SqliteSaver.from_conn_string(DB_PATH) as checkpointer:
+        app = graph.compile(checkpointer=checkpointer)
+        config: RunnableConfig = {"configurable": {"thread_id": "user123"}}
 
-    # arg is the initial state of the graph
-    result = app.invoke({"messages": [("human", "私の名前は太郎です")]}, config)  # pyright: ignore[reportArgumentType]
-    print(result["messages"][-1].content)
+        result = app.invoke({"messages": [("human", "私の名前は太郎です")]}, config)  # pyright: ignore[reportArgumentType]
+        print(result["messages"][-1].content)
 
-    # MemorySaver restores prior messages by thread_id
-    result = app.invoke({"messages": [("human", "私の名前は？")]}, config)  # pyright: ignore[reportArgumentType]
-    print(result["messages"][-1].content)
+        # SqliteSaver がファイルに状態を保存するため、thread_id で履歴を復元
+        result = app.invoke({"messages": [("human", "私の名前は？")]}, config)  # pyright: ignore[reportArgumentType]
+        print(result["messages"][-1].content)
 
 
 def main() -> None:
-    print("Step 4: LangGraph 基本 + MemorySaver")
+    print("Step 4: LangGraph 基本 + SqliteSaver")
 
-    run_step4_langgraph_with_memory()
+    run_step4_langgraph_with_sqlite()
 
 
 if __name__ == "__main__":

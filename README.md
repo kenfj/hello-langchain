@@ -156,10 +156,33 @@ while True:
 | 観点 | LangGraph | pydantic-graph |
 |---|---|---|
 | 中断/再開 | `interrupt()` + `Command(resume=...)` | フレームワークレベルの機構なし |
-| 状態の永続化 | checkpointer が実行途中の状態を保持 | 自前で state を DB に保存する必要あり |
+| 状態の永続化 | checkpointer (SqliteSaver 等) が自動保存 | 自前で state を DB に保存する必要あり |
 | アプリのプロセスをまたぐ再開 | 可能（同じ実行を再開） | 新しい実行として再開する形になる |
+| 保存形式 | msgpack (ormsgpack) — ブラックボックス | Pydantic モデルなので JSON で素直に保存可能 |
 
-アプリのプロセスをまたぐ中断/再開（承認フロー等）は両方とも実現可能だが、LangGraph は checkpointer として組み込みで提供している。pydantic-graph では state の永続化/復元を自前で実装する必要がある。
+- アプリのプロセスをまたぐ中断/再開（承認フロー等）は両方とも実現可能
+- LangGraph は checkpointer で「1行で永続化」できるが、中身が msgpack のためデバッグやマイグレーションが難しい
+- Pydantic AI は自前実装が必要だが、JSON で保存でき中身が読める。スキーマ変更も Pydantic のバリデーションで安全に移行できる
+- プロトタイプなら LangGraph、長期運用なら Pydantic AI の方がカスタムしやすい
+
+### checkpointer 参考コード
+
+* LangChain の sqlite では MessagePack (ormsgpack) で保存されているので、読むには SqliteSaver が必要
+
+```bash
+uv run python -c "
+import sqlite3
+from langgraph.checkpoint.sqlite import SqliteSaver
+
+with SqliteSaver.from_conn_string('step4_memory.db') as checkpointer:
+    config = {'configurable': {'thread_id': 'user123'}}
+    checkpoint = checkpointer.get_tuple(config)
+    if checkpoint:
+        state = checkpoint.checkpoint
+        for msg in state['channel_values'].get('messages', []):
+            print(f'{msg.__class__.__name__}: {msg.content}')
+"
+```
 
 ### 実務での選び方
 

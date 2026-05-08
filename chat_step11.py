@@ -2,7 +2,7 @@ from typing import TypedDict
 
 from langchain_core.runnables import RunnableConfig
 from langchain_ollama import ChatOllama
-from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
 
@@ -64,33 +64,35 @@ graph.add_conditional_edges(
 )
 graph.add_edge("approve", END)
 
+DB_PATH = "step11_memory.db"
+
+
 # Human-in-the-loop には checkpointer が必須 (中断状態を保持するため)
-checkpointer = MemorySaver()
-app = graph.compile(checkpointer=checkpointer)
-
-
 def run_step11_human_in_the_loop() -> None:
-    config: RunnableConfig = {"configurable": {"thread_id": "demo"}}
+    with SqliteSaver.from_conn_string(DB_PATH) as checkpointer:
+        app = graph.compile(checkpointer=checkpointer)
+        app.get_graph().print_ascii()
 
-    print("--- 1回目: 生成 → 人間に確認を求めて中断 ---")
-    for event in app.stream({"user_input": "日本の首都の魅力を一言で"}, config):  # pyright: ignore[reportArgumentType]
-        print(event)
+        config: RunnableConfig = {"configurable": {"thread_id": "demo"}}
 
-    print("\n--- 人間が却下 → 再生成 → 再度中断 ---")
-    for event in app.stream(Command(resume="no"), config):
-        print(event)
+        print("--- 1回目: 生成 → 人間に確認を求めて中断 ---")
+        for event in app.stream({"user_input": "日本の首都の魅力を一言で"}, config):  # pyright: ignore[reportArgumentType]
+            print(event)
 
-    print("\n--- 人間が承認 → 完了 ---")
-    for event in app.stream(Command(resume="yes"), config):
-        print(event)
+        print("\n--- 人間が却下 → 再生成 → 再度中断 ---")
+        for event in app.stream(Command(resume="no"), config):
+            print(event)
 
-    final_state = app.get_state(config)
-    print(f"\n最終回答: {final_state.values['response']}")
+        print("\n--- 人間が承認 → 完了 ---")
+        for event in app.stream(Command(resume="yes"), config):
+            print(event)
+
+        final_state = app.get_state(config)
+        print(f"\n最終回答: {final_state.values['response']}")
 
 
 def main() -> None:
     print("Step 11: Human-in-the-loop（中断・再開）")
-    app.get_graph().print_ascii()
 
     run_step11_human_in_the_loop()
 
